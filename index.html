@@ -142,7 +142,7 @@
   .state-modal-actions .btn{justify-content:center;min-width:72px}
   body.modal-open{overflow:hidden}
 
-  /* 낯섦·학습 중·익숙함 학습 상태 버튼 */
+  /* 낯섦·익힘·익숙 학습 상태 버튼 */
   .rate{display:flex;gap:8px;margin-top:20px}
   .rate button{flex:1;justify-content:center;border:1.5px solid var(--hair);background:transparent;
     color:var(--ink-soft);border-radius:2px;padding:9px;font-size:13.5px;font-family:inherit;
@@ -289,10 +289,10 @@
           <span class="box"></span><span class="lbl">낯섦</span><em id="c-unknown"></em>
         </button>
         <button type="button" class="chk chk-rev" id="r-unsure" data-review="unsure" aria-pressed="false">
-          <span class="box"></span><span class="lbl">학습 중</span><em id="c-unsure"></em>
+          <span class="box"></span><span class="lbl">익힘</span><em id="c-unsure"></em>
         </button>
         <button type="button" class="chk chk-rev" id="r-known" data-review="known" aria-pressed="false">
-          <span class="box"></span><span class="lbl">익숙함</span><em id="c-known"></em>
+          <span class="box"></span><span class="lbl">익숙</span><em id="c-known"></em>
         </button>
       </div>
     </div>
@@ -365,8 +365,8 @@ const state = {
   reviewAll: false,          // true면 학습 상태 지정 여부와 관계없이 전체 표시
   reviewOn: {                // reviewAll이 false일 때 복수 선택
     unknown: false,          // 낯섦
-    unsure: false,           // 학습 중
-    known: false             // 익숙함
+    unsure: false,           // 익힘
+    known: false             // 익숙
     // 기본(셋 다 꺼짐)=미평가만
   },
   gradeOn: {                 // true면 그 등급을 학습에 포함. 기본은 셋 다 켜짐.
@@ -521,7 +521,7 @@ function gradeOf(mark){
 const REVIEW_KEYS=["unknown","unsure","known"];
 // 카드가 현재 학습 상태 필터를 통과하는가.
 //  - 전체가 켜져 있으면: 학습 상태 지정 여부와 관계없이 표시
-//  - 낯섦·학습 중·익숙함이 하나라도 켜져 있으면: 선택된 상태만 표시
+//  - 낯섦·익힘·익숙이 하나라도 켜져 있으면: 선택된 상태만 표시
 //  - 모두 꺼져 있으면: 미평가 카드만 표시
 function matchesReview(id){
   if(state.reviewAll) return true;
@@ -699,10 +699,10 @@ function renderCard(){
   const hint=el("div","tap-hint","카드를 눌러 뜻·예문 보기");
   stage.appendChild(hint);
 
-  // 낯섦·학습 중·익숙함 학습 상태 버튼 (이전/다음 위)
+  // 낯섦·익힘·익숙 학습 상태 버튼 (이전/다음 위)
   const rate=el("div","rate");
   const cur=cardStates[d.id] ? cardStates[d.id].status : null;
-  [["unknown","낯섦"],["unsure","학습 중"],["known","익숙함"]].forEach(([st,label])=>{
+  [["unknown","낯섦"],["unsure","익힘"],["known","익숙"]].forEach(([st,label])=>{
     const b=el("button",null,label);
     b.type="button";
     b.dataset.status=st;
@@ -724,7 +724,7 @@ function renderCard(){
   nav.appendChild(prev);nav.appendChild(next);
   stage.appendChild(nav);
 
-  const kbd=el("div","hintbar","← → 이동 · 스페이스바 뜻 보기 · 1 낯섦 · 2 학습 중 · 3 익숙함");
+  const kbd=el("div","hintbar","← → 이동 · 스페이스바 뜻 보기 · 1 낯섦 · 2 익힘 · 3 익숙");
   stage.appendChild(kbd);
 
   // 현재 카드 ID 저장 (이어보기)
@@ -781,7 +781,7 @@ function gradeCounts(){
 // 현재 화면에 렌더된 카드 객체
 function currentCard(){ return cards.length ? cards[order[pos]] : null; }
 
-// 낯섦/학습 중/익숙함 설정: 같은 상태 재클릭=취소(삭제), 다른 상태=교체
+// 낯섦/익힘/익숙 설정: 같은 상태 재클릭=취소(삭제), 다른 상태=교체
 function setStatus(status){
   const d=currentCard();
   if(!d || !d.id) return;
