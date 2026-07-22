@@ -1266,6 +1266,7 @@ const shareToast=document.getElementById("shareToast");
 let stateModalMode="save";
 let stateModalView="code";
 let stateShareUrl="";
+let stateShareIsLink=false;
 let stateModalReturnFocus=null;
 let shareToastTimer=0;
 
@@ -1280,14 +1281,17 @@ function showShareToast(text,isError=false){
   shareToast.hidden=false;
   shareToastTimer=setTimeout(()=>{shareToast.hidden=true;},3600);
 }
-function makeStateShareUrl(code){
-  if(location.protocol!=="https:" && location.protocol!=="http:"){
-    throw new Error("QR 공유는 GitHub Pages에서 열었을 때 사용할 수 있어요.");
+function makeStateSharePayload(code){
+  const isWeb=location.protocol==="https:" || location.protocol==="http:";
+  if(!isWeb){
+    // 로컬 파일과 ChatGPT 미리보기에서도 QR 생성 자체는 바로 시험할 수 있다.
+    // 다만 다른 기기에서 열 수 있는 공개 주소가 없으므로 저장 코드만 담는다.
+    return {text:code,isLink:false};
   }
   const url=new URL(location.href);
   url.search="";
   url.hash="";
-  return url.toString()+"#s="+code;
+  return {text:url.toString()+"#s="+code,isLink:true};
 }
 function showCodeView(){
   stateModalView="code";
@@ -1300,12 +1304,18 @@ function showCodeView(){
 }
 function showQrView(){
   try{
-    stateShareUrl=makeStateShareUrl(stateCode.value);
+    const share=makeStateSharePayload(stateCode.value);
+    stateShareUrl=share.text;
+    stateShareIsLink=share.isLink;
     const qr=MiniQR.toSvg(stateShareUrl);
     stateQrGraphic.innerHTML=qr.svg;
-    stateQrNote.textContent=qr.moduleCount>=105
-      ? "학습 기록이 많아 QR이 촘촘해요. 화면 밝기를 높이고 정면에서 스캔하세요."
-      : "다른 기기의 카메라로 스캔하세요.";
+    if(!share.isLink){
+      stateQrNote.textContent="로컬 테스트용 QR이에요. 학습 상태 코드만 담겨 있어 웹페이지로 자동 이동하지 않아요.";
+    }else if(qr.moduleCount>=105){
+      stateQrNote.textContent="학습 기록이 많아 QR이 촘촘해요. 화면 밝기를 높이고 정면에서 스캔하세요.";
+    }else{
+      stateQrNote.textContent="다른 기기의 카메라로 스캔하세요.";
+    }
   }catch(e){
     setStateMessage(e && e.message ? e.message : "QR 코드를 만들 수 없어요.",true);
     return;
@@ -1314,13 +1324,16 @@ function showQrView(){
   stateCode.hidden=true;
   stateQrPanel.hidden=false;
   stateQr.textContent="코드";
-  stateModalHelp.textContent="카메라로 스캔하면 이 웹앱이 열리고 학습 상태가 자동으로 불러와져요.";
+  stateModalHelp.textContent=stateShareIsLink
+    ? "카메라로 스캔하면 이 웹앱이 열리고 학습 상태가 자동으로 불러와져요."
+    : "QR 생성과 스캔을 바로 시험할 수 있어요. 자동 이동 기능은 GitHub Pages 주소에서 동작해요.";
   setStateMessage("");
 }
 function openStateModal(mode){
   stateModalMode=mode;
   stateModalView="code";
   stateShareUrl="";
+  stateShareIsLink=false;
   stateModalReturnFocus=document.activeElement;
   stateQrGraphic.innerHTML="";
   stateQrPanel.hidden=true;
@@ -1359,6 +1372,7 @@ function closeStateModal(){
   document.body.classList.remove("modal-open");
   stateQrGraphic.innerHTML="";
   stateShareUrl="";
+  stateShareIsLink=false;
   setStateMessage("");
   if(stateModalReturnFocus && typeof stateModalReturnFocus.focus==="function") stateModalReturnFocus.focus();
 }
@@ -1388,10 +1402,14 @@ async function copyText(text,successMessage){
 function copyStateCode(){
   if(stateModalView==="qr"){
     if(!stateShareUrl){
-      try{stateShareUrl=makeStateShareUrl(stateCode.value);}
-      catch(e){setStateMessage(e.message,true);return;}
+      const share=makeStateSharePayload(stateCode.value);
+      stateShareUrl=share.text;
+      stateShareIsLink=share.isLink;
     }
-    copyText(stateShareUrl,"공유 링크를 복사했어요.");
+    copyText(
+      stateShareUrl,
+      stateShareIsLink ? "공유 링크를 복사했어요." : "학습 상태 코드를 복사했어요."
+    );
   }else{
     copyText(stateCode.value,"복사했어요.");
   }
